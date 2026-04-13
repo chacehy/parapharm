@@ -113,6 +113,11 @@ export default function DashboardProductsPage() {
 
   return (
     <div className="container" style={{ padding: '2rem 1.5rem' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button onClick={() => router.push('/dashboard')} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: 0 }}>
+          &larr; Back to Dashboard
+        </button>
+      </div>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '2rem', flexWrap: 'wrap', gap: '1rem' }}>
         <div>
           <h1 style={{ marginBottom: '0.25rem' }}>Products</h1>

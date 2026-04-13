@@ -115,6 +115,11 @@ export default function AccountPage() {
 
   return (
     <div className="container" style={{ padding: '2rem 1.5rem', maxWidth: '900px' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button onClick={() => router.back()} className="btn btn-ghost btn-sm" style={{ display: 'inline-flex', alignItems: 'center', gap: '0.5rem', padding: 0 }}>
+          &larr; Back to {profile.role === 'customer' ? 'Search' : 'Dashboard'}
+        </button>
+      </div>
       <h1 style={{ marginBottom: '0.25rem' }}>Account Settings</h1>
       <p style={{ color: 'var(--muted)', marginBottom: '2rem' }}>
         Manage your {profile.role === 'pharmacy' ? 'pharmacy' : 'customer'} profile

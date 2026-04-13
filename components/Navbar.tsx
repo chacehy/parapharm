@@ -16,16 +16,39 @@ export function Navbar() {
   const cartCount = useCartStore((s) => s.items.reduce((n, i) => n + i.quantity, 0))
 
   useEffect(() => {
+    const fetchProfile = async (userId: string) => {
+      const { data } = await supabase.from('profiles').select('*').eq('id', userId).single()
+      setProfile(data)
+      const { count } = await supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', userId).eq('is_read', false)
+      setUnread(count ?? 0)
+    }
+
+    // Initial fetch
     supabase.auth.getUser().then(({ data: { user } }) => {
-      if (!user) return
-      supabase.from('profiles').select('*').eq('id', user.id).single().then(({ data }) => {
-        setProfile(data)
-      })
-      supabase.from('notifications').select('id', { count: 'exact' }).eq('user_id', user.id).eq('is_read', false).then(({ count }) => {
-        setUnread(count ?? 0)
-      })
+      if (user) {
+        fetchProfile(user.id)
+      } else {
+        setProfile(null)
+      }
     })
-  }, [])
+
+    // Listen for auth changes (login/logout crossing tabs/pages)
+    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) {
+        fetchProfile(session.user.id)
+      } else {
+        setProfile(null)
+      }
+      
+      if (event === 'SIGNED_OUT') {
+        router.refresh()
+      }
+    })
+
+    return () => {
+      authListener.subscription.unsubscribe()
+    }
+  }, [supabase, router])
 
   // Realtime unread badge
   useEffect(() => {
@@ -52,7 +75,7 @@ export function Navbar() {
   return (
     <nav className="nav">
       <div className="container nav-inner">
-        <Link href="/" className="nav-logo">◼ ParaPharm</Link>
+        <Link href={profile ? (profile.role === 'pharmacy' ? '/dashboard' : '/search') : '/'} className="nav-logo">◼ ParaPharm</Link>
 
         <div className="nav-links hide-mobile">
           <Link href="/search" className={isActive('/search')}>

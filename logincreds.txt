@@ -1,0 +1,5 @@
+customer : epic.abdelbasset@gmail.com
+password : Az12az34m
+
+pharmacist : henna.abdelbasset@gmail.com
+password : Az12az34m
