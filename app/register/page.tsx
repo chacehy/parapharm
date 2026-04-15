@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,7 @@ import { MapPin, Eye, EyeOff, Building2, User } from 'lucide-react'
 
 type Role = 'customer' | 'pharmacy'
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
   const params = useSearchParams()
   const supabase = createClient()
@@ -55,7 +55,7 @@ export default function RegisterPage() {
     }
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await (supabase.auth as any).signUp({
       email,
       password,
       options: {
@@ -75,7 +75,7 @@ export default function RegisterPage() {
       profileUpdate.location = `SRID=4326;POINT(${coords.lng} ${coords.lat})`
     }
 
-    await supabase.from('profiles').update(profileUpdate).eq('id', data.user.id)
+    await supabase.from('profiles').update(profileUpdate as any).eq('id', data.user.id) as any
 
     setLoading(false)
     toast.success('Account created! You can now sign in.')
@@ -174,5 +174,17 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: '2rem', height: '2rem' }} />
+      </div>
+    }>
+      <RegisterContent />
+    </Suspense>
   )
 }

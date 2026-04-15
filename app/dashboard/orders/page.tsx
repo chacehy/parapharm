@@ -110,7 +110,7 @@ function DashboardOrdersContent() {
 
   const updateStatus = async (order: OrderWithDetails, newStatus: OrderStatus) => {
     setUpdating(order.id)
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', order.id)
+    const { error } = await supabase.from('orders').update({ status: newStatus } as any).eq('id', order.id) as any
     setUpdating(null)
     if (error) { toast.error('Failed to update status'); return }
     setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: newStatus } : o))

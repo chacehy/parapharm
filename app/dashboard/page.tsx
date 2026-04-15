@@ -32,14 +32,17 @@ export default function DashboardPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single() as { data: Profile | null }
       if (!p || p.role !== 'pharmacy') { router.push('/'); return }
       setProfile(p)
 
-      const [{ data: orders }, { count: productCount }] = await Promise.all([
-        supabase.from('orders').select('*').eq('pharmacy_id', user.id).order('created_at', { ascending: false }),
-        supabase.from('products').select('id', { count: 'exact' }).eq('pharmacy_id', user.id),
+      const [ordersRes, productsRes] = await Promise.all([
+        supabase.from('orders').select('*').eq('pharmacy_id', user.id).order('created_at', { ascending: false }) as any,
+        supabase.from('products').select('id', { count: 'exact' }).eq('pharmacy_id', user.id) as any,
       ])
+
+      const orders = ordersRes.data as Order[] | null
+      const productCount = productsRes.count
 
       if (orders) {
         setRecentOrders(orders.slice(0, 5))
@@ -55,7 +58,7 @@ export default function DashboardPage() {
 
         const ids = [...new Set(orders.map((o) => o.customer_id))]
         if (ids.length > 0) {
-          const { data: custs } = await supabase.from('profiles').select('id, name').in('id', ids)
+          const { data: custs } = await supabase.from('profiles').select('id, name').in('id', ids) as { data: { id: string, name: string }[] | null }
           if (custs) {
             const map: Record<string, string> = {}
             custs.forEach((c) => { map[c.id] = c.name })

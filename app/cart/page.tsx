@@ -52,7 +52,7 @@ export default function CartPage() {
 
     const { data: order, error: orderError } = await supabase
       .from('orders')
-      .insert(orderPayload)
+      .insert(orderPayload as any)
       .select('id')
       .single()
 

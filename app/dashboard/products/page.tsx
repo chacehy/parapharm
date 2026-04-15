@@ -81,12 +81,12 @@ export default function DashboardProductsPage() {
     }
 
     if (editing) {
-      const { error } = await supabase.from('products').update(payload).eq('id', editing.id)
+      const { error } = await supabase.from('products').update(payload as any).eq('id', editing.id) as any
       if (error) { toast.error('Failed to update product'); setSaving(false); return }
       setProducts((prev) => prev.map((p) => p.id === editing.id ? { ...p, ...payload, id: editing.id, created_at: editing.created_at } : p))
       toast.success('Product updated')
     } else {
-      const { data, error } = await supabase.from('products').insert(payload).select().single()
+      const { data, error } = await supabase.from('products').insert(payload as any).select().single() as any
       if (error || !data) { toast.error('Failed to add product'); setSaving(false); return }
       setProducts((prev) => [data, ...prev])
       toast.success('Product added')
