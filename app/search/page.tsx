@@ -49,11 +49,11 @@ function SearchContent() {
     setLoading(true)
 
     // Find nearby pharmacies first
-    const { data: pharmacies, error } = await supabase.rpc('find_nearby_pharmacies', {
+    const { data: pharmacies, error } = await (supabase as any).rpc('find_nearby_pharmacies', {
       p_lat: coords.lat,
       p_lng: coords.lng,
       p_radius_km: radius,
-    })
+    }) as { data: NearbyPharmacy[] | null, error: any }
 
     if (error || !pharmacies || pharmacies.length === 0) { 
       setPharmaciesFound(0)
@@ -65,7 +65,7 @@ function SearchContent() {
     setPharmaciesFound(pharmacies.length)
 
     // Fetch products from those pharmacies
-    const pharmacyIds = pharmacies.map((p: any) => p.pharmacy_id)
+    const pharmacyIds = (pharmacies as NearbyPharmacy[]).map((p) => p.pharmacy_id)
     let q = supabase
       .from('products')
       .select('*')
@@ -80,7 +80,7 @@ function SearchContent() {
 
     // Map products to include pharmacy distance and name
     const flatProducts: ProductWithPharmacy[] = (products || []).map(prod => {
-      const ph = pharmacies.find((p: any) => p.pharmacy_id === prod.pharmacy_id)
+      const ph = (pharmacies as NearbyPharmacy[]).find((p) => p.pharmacy_id === prod.pharmacy_id)
       return {
         ...prod,
         pharmacy_name: ph?.pharmacy_name || 'Nearby Pharmacy',

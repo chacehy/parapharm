@@ -5,7 +5,7 @@ import { User, MapPin, Phone, Save, Upload, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/Toast'
 import { PharmacyMap } from '@/components/PharmacyMap'
-import type { Profile } from '@/lib/database.types'
+import type { Profile, NearbyPharmacy } from '@/lib/database.types'
 
 export default function AccountPage() {
   const router = useRouter()
@@ -27,8 +27,7 @@ export default function AccountPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single()
-      const p = data as Profile | null
+      const { data: p } = await supabase.from('profiles').select('*').eq('id', user.id).single() as { data: Profile | null }
       if (!p) return
 
       setProfile(p)
@@ -36,7 +35,7 @@ export default function AccountPage() {
 
       // Try to get coordinates from PostGIS via the nearby function
       if (p.role === 'pharmacy' && p.location) {
-        const { data: loc } = await (supabase.rpc as any)('find_nearby_pharmacies', { p_lat: 0, p_lng: 0, p_radius_km: 99999 })
+        const { data: loc } = await (supabase as any).rpc('find_nearby_pharmacies', { p_lat: 0, p_lng: 0, p_radius_km: 99999 }) as { data: NearbyPharmacy[] | null }
         const mine = loc?.find((x: { pharmacy_id: string }) => x.pharmacy_id === user.id)
         if (mine) setCoords({ lat: mine.pharmacy_lat, lng: mine.pharmacy_lng })
       }
@@ -66,7 +65,7 @@ export default function AccountPage() {
     const { error } = await supabase.storage.from('avatars').upload(path, file, { upsert: true })
     if (error) { toast.error('Upload failed'); setUploading(false); return }
     const { data: url } = supabase.storage.from('avatars').getPublicUrl(path)
-    await (supabase.from('profiles') as any).update({ avatar_url: url.publicUrl }).eq('id', profile.id)
+    await supabase.from('profiles').update({ avatar_url: url.publicUrl }).eq('id', profile.id) as any
     setProfile((p) => p ? { ...p, avatar_url: url.publicUrl } : p)
     setUploading(false)
     toast.success('Avatar updated')
@@ -87,7 +86,7 @@ export default function AccountPage() {
       update.location = `SRID=4326;POINT(${coords.lng} ${coords.lat})`
     }
 
-    const { error } = await (supabase.from('profiles') as any).update(update).eq('id', profile.id)
+    const { error } = await supabase.from('profiles').update(update as any).eq('id', profile.id) as any
     setSaving(false)
     if (error) { toast.error('Failed to save changes'); return }
     setProfile((p) => p ? { ...p, name: form.name, phone: form.phone, address: form.address } : p)

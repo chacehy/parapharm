@@ -24,10 +24,10 @@ function LoginContent() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data, error } = await (supabase.auth as any).signInWithPassword({ email, password })
     setLoading(false)
     if (error) { toast.error(error.message); return }
-    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single()
+    const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single() as any
     toast.success('Welcome back!')
     router.push(profile?.role === 'pharmacy' ? '/dashboard' : '/search')
     router.refresh()
@@ -81,7 +81,11 @@ function LoginContent() {
 
 export default function LoginPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: '2rem', height: '2rem' }} />
+      </div>
+    }>
       <LoginContent />
     </Suspense>
   )

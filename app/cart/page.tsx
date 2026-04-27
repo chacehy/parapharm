@@ -50,8 +50,9 @@ export default function CartPage() {
       orderPayload.delivery_location = `SRID=4326;POINT(${coords.lng} ${coords.lat})`
     }
 
-    const { data: order, error: orderError } = await (supabase.from('orders') as any)
-      .insert(orderPayload)
+    const { data: order, error: orderError } = await supabase
+      .from('orders')
+      .insert(orderPayload as any)
       .select('id')
       .single()
 

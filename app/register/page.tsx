@@ -55,7 +55,7 @@ function RegisterContent() {
     }
     setLoading(true)
 
-    const { data, error } = await supabase.auth.signUp({
+    const { data, error } = await (supabase.auth as any).signUp({
       email,
       password,
       options: {
@@ -75,7 +75,7 @@ function RegisterContent() {
       profileUpdate.location = `SRID=4326;POINT(${coords.lng} ${coords.lat})`
     }
 
-    await supabase.from('profiles').update(profileUpdate).eq('id', data.user.id)
+    await supabase.from('profiles').update(profileUpdate as any).eq('id', data.user.id) as any
 
     setLoading(false)
     toast.success('Account created! You can now sign in.')
@@ -179,7 +179,11 @@ function RegisterContent() {
 
 export default function RegisterPage() {
   return (
-    <Suspense>
+    <Suspense fallback={
+      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div className="spinner" style={{ width: '2rem', height: '2rem' }} />
+      </div>
+    }>
       <RegisterContent />
     </Suspense>
   )
