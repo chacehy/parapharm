@@ -29,7 +29,7 @@ const TESTIMONIALS = [
     text: 'Plus besoin de courir de pharmacie en pharmacie. ParaPharm m\'affiche direct ce qui est disponible près de chez moi.',
   },
   {
-    name: 'Lina B.',
+    name: 'Meriem N.',
     location: 'Constantine',
     stars: 5,
     text: 'Interface super propre, paiement à la livraison, et mon colis est arrivé en 45 min. Top service !',
