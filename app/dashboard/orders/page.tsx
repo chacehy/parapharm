@@ -44,7 +44,8 @@ function DashboardOrdersContent() {
     const load = async () => {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
-      const { data: p } = await supabase.from('profiles').select('role, id').eq('id', user.id).single()
+      const { data } = await supabase.from('profiles').select('role, id').eq('id', user.id).single()
+      const p = data as Profile | null
       if (!p || p.role !== 'pharmacy') { router.push('/'); return }
       setPharmacyId(p.id)
 
@@ -110,7 +111,7 @@ function DashboardOrdersContent() {
 
   const updateStatus = async (order: OrderWithDetails, newStatus: OrderStatus) => {
     setUpdating(order.id)
-    const { error } = await supabase.from('orders').update({ status: newStatus }).eq('id', order.id)
+    const { error } = await (supabase.from('orders') as any).update({ status: newStatus }).eq('id', order.id)
     setUpdating(null)
     if (error) { toast.error('Failed to update status'); return }
     setOrders((prev) => prev.map((o) => o.id === order.id ? { ...o, status: newStatus } : o))
@@ -209,8 +210,9 @@ function DashboardOrdersContent() {
                       </div>
                     ) : (
                       <>
-                        <table className="table" style={{ marginBottom: '1rem' }}>
-                          <thead>
+                        <div style={{ overflowX: 'auto' }}>
+                          <table className="table" style={{ marginBottom: '1rem', minWidth: '400px' }}>
+                            <thead>
                             <tr>
                               <th>Product</th>
                               <th>Qty</th>
@@ -229,6 +231,7 @@ function DashboardOrdersContent() {
                             ))}
                           </tbody>
                         </table>
+                        </div>
                         {order.notes && (
                           <p style={{ fontSize: '0.8rem', color: 'var(--muted)', padding: '0.75rem', background: 'var(--gray-50)', border: '2px solid var(--border)' }}>
                             <strong>Notes:</strong> {order.notes}

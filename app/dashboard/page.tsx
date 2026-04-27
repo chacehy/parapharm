@@ -111,7 +111,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {statCards.map((sc) => (
           <div key={sc.label} className="card" style={{ padding: '1.25rem 1.5rem', background: sc.bg, border: '2px solid var(--border)' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
@@ -124,7 +124,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Quick nav */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', marginBottom: '2rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: '1rem', marginBottom: '2rem' }}>
         {[
           { href: '/dashboard', label: 'Overview', icon: <LayoutDashboard size={18} /> },
           { href: '/dashboard/products', label: 'Products', icon: <Package size={18} /> },
@@ -150,8 +150,9 @@ export default function DashboardPage() {
             <p>No orders yet. Orders will appear here in real time.</p>
           </div>
         ) : (
-          <table className="table">
-            <thead>
+          <div style={{ overflowX: 'auto' }}>
+            <table className="table" style={{ minWidth: '600px' }}>
+              <thead>
               <tr>
                 <th>Order ID</th>
                 <th>Customer</th>
@@ -172,6 +173,7 @@ export default function DashboardPage() {
               ))}
             </tbody>
           </table>
+          </div>
         )}
       </div>
     </div>

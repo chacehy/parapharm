@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, Suspense } from 'react'
 import { useParams, useSearchParams } from 'next/navigation'
 import { MapPin, ShoppingCart, Package, Phone, ChevronLeft } from 'lucide-react'
 import Link from 'next/link'
@@ -11,7 +11,7 @@ import type { Profile, Product } from '@/lib/database.types'
 
 const CATEGORIES = ['All', 'Vitamins', 'Supplements', 'Skincare', 'Baby', 'Orthopedics', 'Homeopathy', 'Other']
 
-export default function PharmacyPage() {
+function PharmacyContent() {
   const { id } = useParams<{ id: string }>()
   const searchParams = useSearchParams()
   const highlight = searchParams.get('highlight')
@@ -124,7 +124,7 @@ export default function PharmacyPage() {
       </div>
 
       <div className="container" style={{ padding: '2rem 1.5rem' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start' }}>
           {/* Products panel */}
           <div>
             {/* Filters */}
@@ -226,5 +226,13 @@ export default function PharmacyPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PharmacyPage() {
+  return (
+    <Suspense>
+      <PharmacyContent />
+    </Suspense>
   )
 }

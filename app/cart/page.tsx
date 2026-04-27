@@ -50,8 +50,7 @@ export default function CartPage() {
       orderPayload.delivery_location = `SRID=4326;POINT(${coords.lng} ${coords.lat})`
     }
 
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
+    const { data: order, error: orderError } = await (supabase.from('orders') as any)
       .insert(orderPayload)
       .select('id')
       .single()
@@ -69,11 +68,11 @@ export default function CartPage() {
       price: i.product.price,
     }))
 
-    const { error: itemsError } = await supabase.from('order_items').insert(orderItems)
+    const { error: itemsError } = await (supabase.from('order_items') as any).insert(orderItems)
 
     if (itemsError) {
       // Rollback order
-      await supabase.from('orders').delete().eq('id', order.id)
+      await (supabase.from('orders') as any).delete().eq('id', order.id)
       setLoading(false)
       toast.error('Failed to save order items. Please try again.')
       return
@@ -98,7 +97,7 @@ export default function CartPage() {
     <div className="container" style={{ padding: '2rem 1.5rem' }}>
       <h1 style={{ marginBottom: '2rem' }}>Your Cart</h1>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 380px', gap: '2rem', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '2rem', alignItems: 'start' }}>
         {/* Items */}
         <div className="card">
           <div style={{ padding: '1rem 1.5rem', borderBottom: '2px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>

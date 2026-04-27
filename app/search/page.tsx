@@ -65,7 +65,7 @@ function SearchContent() {
     setPharmaciesFound(pharmacies.length)
 
     // Fetch products from those pharmacies
-    const pharmacyIds = pharmacies.map((p) => p.pharmacy_id)
+    const pharmacyIds = pharmacies.map((p: any) => p.pharmacy_id)
     let q = supabase
       .from('products')
       .select('*')
@@ -80,7 +80,7 @@ function SearchContent() {
 
     // Map products to include pharmacy distance and name
     const flatProducts: ProductWithPharmacy[] = (products || []).map(prod => {
-      const ph = pharmacies.find((p) => p.pharmacy_id === prod.pharmacy_id)
+      const ph = pharmacies.find((p: any) => p.pharmacy_id === prod.pharmacy_id)
       return {
         ...prod,
         pharmacy_name: ph?.pharmacy_name || 'Nearby Pharmacy',

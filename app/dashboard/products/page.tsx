@@ -134,8 +134,8 @@ export default function DashboardProductsPage() {
           <button onClick={openAdd} className="btn btn-primary">Add First Product</button>
         </div>
       ) : (
-        <div className="card" style={{ overflow: 'hidden' }}>
-          <table className="table">
+        <div className="card" style={{ overflowX: 'auto' }}>
+          <table className="table" style={{ minWidth: '600px' }}>
             <thead>
               <tr>
                 <th>Image</th>
@@ -208,7 +208,7 @@ export default function DashboardProductsPage() {
                 <textarea id="p-desc" className="input" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Brief product description…" style={{ minHeight: '80px', resize: 'vertical' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
                 <div className="input-group">
                   <label className="label" htmlFor="p-price">Price (DZD) <span style={{ color: '#dc2626' }}>*</span></label>
                   <input id="p-price" type="number" className="input" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} required min="0" step="0.01" placeholder="0.00" />

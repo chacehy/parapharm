@@ -1,5 +1,5 @@
 'use client'
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -8,7 +8,7 @@ import { MapPin, Eye, EyeOff, Building2, User } from 'lucide-react'
 
 type Role = 'customer' | 'pharmacy'
 
-export default function RegisterPage() {
+function RegisterContent() {
   const router = useRouter()
   const params = useSearchParams()
   const supabase = createClient()
@@ -174,5 +174,13 @@ export default function RegisterPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function RegisterPage() {
+  return (
+    <Suspense>
+      <RegisterContent />
+    </Suspense>
   )
 }
