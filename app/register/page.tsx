@@ -88,7 +88,7 @@ function RegisterContent() {
         <div className="card" style={{ padding: '2.5rem' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Create Account</h1>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Join the ParaPharm network</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Join the Wellza network</p>
           </div>
 
           {/* Role toggle */}

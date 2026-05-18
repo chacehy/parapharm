@@ -70,6 +70,6 @@ export const useCartStore = create<CartStore>()(
         return items.length > 0 ? items[0].pharmacyId : null
       },
     }),
-    { name: 'parapharm-cart' }
+    { name: 'wellza-cart' }
   )
 )

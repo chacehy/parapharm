@@ -9,6 +9,7 @@ import type { NearbyPharmacy, Product } from '@/lib/database.types'
 interface ProductWithPharmacy extends Product {
   pharmacy_name: string
   distance_km: number
+  search_type: 'sponsored' | 'organic'
 }
 
 function SearchContent() {
@@ -48,50 +49,25 @@ function SearchContent() {
     if (!coords) return
     setLoading(true)
 
-    // Find nearby pharmacies first
-    const { data: pharmacies, error } = await (supabase as any).rpc('find_nearby_pharmacies', {
+    const { data: rankedProducts, error } = await (supabase as any).rpc('search_products_amazon_model', {
+      p_query: query.trim(),
       p_lat: coords.lat,
       p_lng: coords.lng,
       p_radius_km: radius,
-    }) as { data: NearbyPharmacy[] | null, error: any }
+    }) as { data: ProductWithPharmacy[] | null, error: any }
 
-    if (error || !pharmacies || pharmacies.length === 0) { 
-      setPharmaciesFound(0)
+    if (error || !rankedProducts || rankedProducts.length === 0) { 
+      // Fallback or count pharmacies? We don't return pharmacy count directly now.
+      // But we can check if it's empty.
+      setPharmaciesFound(rankedProducts ? 1 : 0) // Just to avoid the "No pharmacies found" empty state incorrectly if there are no products. Wait, actually we don't have separate pharmacy count.
       setProductsGrid([])
       setLoading(false)
       return 
     }
 
-    setPharmaciesFound(pharmacies.length)
-
-    // Fetch products from those pharmacies
-    const pharmacyIds = (pharmacies as NearbyPharmacy[]).map((p) => p.pharmacy_id)
-    let q = supabase
-      .from('products')
-      .select('*')
-      .in('pharmacy_id', pharmacyIds)
-      .eq('is_available', true)
-
-    if (query.trim()) {
-      q = q.ilike('name', `%${query.trim()}%`)
-    }
-
-    const { data: products } = await q.order('name')
-
-    // Map products to include pharmacy distance and name
-    const flatProducts: ProductWithPharmacy[] = (products || []).map(prod => {
-      const ph = (pharmacies as NearbyPharmacy[]).find((p) => p.pharmacy_id === prod.pharmacy_id)
-      return {
-        ...prod,
-        pharmacy_name: ph?.pharmacy_name || 'Nearby Pharmacy',
-        distance_km: ph?.distance_km || 0
-      }
-    })
-
-    // Sort products by distance
-    flatProducts.sort((a, b) => a.distance_km - b.distance_km)
-
-    setProductsGrid(flatProducts)
+    // Products are already sorted by the RPC (rank_score DESC, distance_km ASC)
+    setPharmaciesFound(1) // Hack to bypass empty state
+    setProductsGrid(rankedProducts)
     setLoading(false)
   }, [coords, query, radius, supabase])
 
@@ -102,6 +78,18 @@ function SearchContent() {
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
     doSearch()
+  }
+
+  const handleProductClick = async (product: ProductWithPharmacy) => {
+    if (product.search_type === 'sponsored' && query.trim()) {
+      // Background RPC call, no need to await it
+      (supabase as any).rpc('register_sponsored_click', {
+        p_pharmacy_id: product.pharmacy_id,
+        p_product_id: product.id,
+        p_keyword: query.trim()
+      }).then(() => console.log('Click registered'))
+        .catch((err: any) => console.error('Error registering click', err))
+    }
   }
 
   return (
@@ -184,35 +172,85 @@ function SearchContent() {
       )}
 
       {!loading && productsGrid.length > 0 && (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
-          {productsGrid.map((product) => (
-            <Link key={product.id} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} style={{ textDecoration: 'none' }}>
-              <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
-                {product.image_url ? (
-                  <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
-                ) : (
-                  <div style={{ width: '100%', height: '160px', background: 'var(--green-50)', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <Package size={40} color="var(--primary)" opacity={0.5} />
-                  </div>
-                )}
-                
-                <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', lineHeight: 1.2 }}>{product.name}</h3>
-                {product.category && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.75rem', display: 'block' }}>{product.category}</span>}
-                
-                <div style={{ marginTop: 'auto' }}>
-                  <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.25rem', marginBottom: '0.5rem' }}>
-                    {product.price.toFixed(2)} DZD
-                  </p>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--muted)', background: 'var(--green-50)', padding: '0.5rem', borderRadius: '4px' }}>
-                    <span style={{ fontWeight: 500, color: 'var(--green-800)' }}>{product.pharmacy_name}</span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={10} /> {product.distance_km} km</span>
-                  </div>
-                </div>
+        <>
+          {productsGrid.filter((p) => p.search_type === 'sponsored').length > 0 && (
+            <div style={{ marginBottom: '2.5rem', background: 'linear-gradient(to right, rgba(234, 179, 8, 0.05), rgba(234, 179, 8, 0.02))', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
+              <h2 style={{ fontSize: '1rem', color: '#854d0e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#eab308' }}></span>
+                Sponsored
+              </h2>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                {productsGrid.filter((p) => p.search_type === 'sponsored').map((product) => (
+                  <Link key={`sponsored-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
+                    <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid rgba(234, 179, 8, 0.4)', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '160px', background: 'var(--green-50)', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Package size={40} color="var(--primary)" opacity={0.5} />
+                        </div>
+                      )}
+                      
+                      <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', lineHeight: 1.2 }}>{product.name}</h3>
+                      {product.category && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.75rem', display: 'block' }}>{product.category}</span>}
+                      
+                      <div style={{ marginTop: 'auto' }}>
+                        <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                          {product.price.toFixed(2)} DZD
+                        </p>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--muted)', background: 'var(--green-50)', padding: '0.5rem', borderRadius: '4px' }}>
+                          <span style={{ fontWeight: 500, color: 'var(--green-800)' }}>{product.pharmacy_name}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={10} /> {product.distance_km} km</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
               </div>
-            </Link>
-          ))}
-        </div>
+            </div>
+          )}
+
+          <div>
+            {productsGrid.filter((p) => p.search_type === 'organic').length > 0 ? (
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
+                {productsGrid.filter((p) => p.search_type === 'organic').map((product) => (
+                  <Link key={`organic-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
+                    <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '160px', background: 'var(--green-50)', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                          <Package size={40} color="var(--primary)" opacity={0.5} />
+                        </div>
+                      )}
+                      
+                      <h3 style={{ fontSize: '1.125rem', marginBottom: '0.25rem', lineHeight: 1.2 }}>{product.name}</h3>
+                      {product.category && <span style={{ fontSize: '0.75rem', color: 'var(--muted)', marginBottom: '0.75rem', display: 'block' }}>{product.category}</span>}
+                      
+                      <div style={{ marginTop: 'auto' }}>
+                        <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '1.25rem', marginBottom: '0.5rem' }}>
+                          {product.price.toFixed(2)} DZD
+                        </p>
+                        
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--muted)', background: 'var(--green-50)', padding: '0.5rem', borderRadius: '4px' }}>
+                          <span style={{ fontWeight: 500, color: 'var(--green-800)' }}>{product.pharmacy_name}</span>
+                          <span style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}><MapPin size={10} /> {product.distance_km} km</span>
+                        </div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="empty-state">
+                <Package size={48} />
+                <h3>No organic results</h3>
+                <p>Try searching for a different product or increasing your radius.</p>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   )

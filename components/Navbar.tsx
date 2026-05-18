@@ -75,7 +75,7 @@ export function Navbar() {
   return (
     <nav className="nav">
       <div className="container nav-inner">
-        <Link href={profile ? (profile.role === 'pharmacy' ? '/dashboard' : '/search') : '/'} className="nav-logo">◼ ParaPharm</Link>
+        <Link href={profile ? (profile.role === 'pharmacy' ? '/dashboard' : '/search') : '/'} className="nav-logo">◼ Wellza</Link>
 
         <div className="nav-links hide-mobile">
           <Link href="/search" className={isActive('/search')}>

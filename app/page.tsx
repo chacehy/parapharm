@@ -26,7 +26,7 @@ const TESTIMONIALS = [
     name: 'Riad M.',
     location: 'Oran',
     stars: 5,
-    text: 'Plus besoin de courir de pharmacie en pharmacie. ParaPharm m\'affiche direct ce qui est disponible près de chez moi.',
+    text: 'Plus besoin de courir de pharmacie en pharmacie. Wellza m\'affiche direct ce qui est disponible près de chez moi.',
   },
   {
     name: 'Meriem N.',
@@ -50,7 +50,7 @@ const FEATURES = [
   {
     icon: <Shield size={22} />,
     title: 'Pharmacies Vérifiées',
-    desc: 'Chaque pharmacie sur ParaPharm est vérifiée et agréée. Vos produits de santé sont entre de bonnes mains.',
+    desc: 'Chaque pharmacie sur Wellza est vérifiée et agréée. Vos produits de santé sont entre de bonnes mains.',
   },
   {
     icon: <Clock size={22} />,
@@ -307,7 +307,7 @@ export default function HomePage() {
         <div className="container">
           <div style={{ marginBottom: '2.5rem' }}>
             <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              Pourquoi ParaPharm ?
+              Pourquoi Wellza ?
             </p>
             <h2>Conçu pour votre confort.</h2>
           </div>
@@ -434,7 +434,7 @@ export default function HomePage() {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '2rem', marginBottom: '2rem' }}>
             {/* Brand */}
             <div>
-              <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>◼ ParaPharm</div>
+              <div style={{ fontWeight: 800, color: 'var(--primary)', fontSize: '1.2rem', marginBottom: '0.5rem' }}>◼ Wellza</div>
               <p style={{ fontSize: '0.825rem', color: 'var(--muted)', maxWidth: '220px', lineHeight: 1.6 }}>
                 Votre pharmacie de quartier, accessible en ligne.
               </p>
@@ -461,7 +461,7 @@ export default function HomePage() {
           </div>
 
           <div style={{ borderTop: '2px solid var(--border)', paddingTop: '1.25rem', display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
-            <p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>© {new Date().getFullYear()} ParaPharm. Tous droits réservés.</p>
+            <p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>© {new Date().getFullYear()} Wellza. Tous droits réservés.</p>
             <p style={{ fontSize: '0.78rem', color: 'var(--muted)' }}>Fait avec ♥ en Algérie</p>
           </div>
         </div>

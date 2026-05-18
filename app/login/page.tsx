@@ -39,7 +39,7 @@ function LoginContent() {
         <div className="card" style={{ padding: '2.5rem' }}>
           <div style={{ marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.75rem', marginBottom: '0.5rem' }}>Sign In</h1>
-            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Access your ParaPharm account</p>
+            <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Access your Wellza account</p>
             {params.get('message') && (
               <div style={{ marginTop: '1rem', padding: '0.75rem', background: 'var(--green-50)', border: '2px solid var(--green-200)', fontSize: '0.85rem', color: 'var(--green-800)' }}>
                 {params.get('message')}

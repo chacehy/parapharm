@@ -4,7 +4,7 @@ import { Navbar } from '@/components/Navbar'
 import { ToastProvider } from '@/components/Toast'
 
 export const metadata: Metadata = {
-  title: 'ParaPharm — Find Nearby Pharmacies & Supplements',
+  title: 'Wellza — Find Nearby Pharmacies & Supplements',
   description:
     'Discover parapharmacy products at pharmacies near you. Order supplements, vitamins, and wellness products online with cash-on-delivery.',
   keywords: 'pharmacy, supplements, parapharmacy, Algeria, vitamins, wellness',
