@@ -2,8 +2,9 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   Search, MapPin, ShoppingBag, Zap, Shield, Clock,
-  Star, ChevronRight, CheckCircle, Leaf, Pill, HeartPulse, Sparkles, Flame
+  Star, CheckCircle
 } from 'lucide-react'
+import CategoryBento from '@/components/CategoryBento'
 
 /* ─── Static data ────────────────────────────────────────────────── */
 const CATEGORIES = [
@@ -226,37 +227,7 @@ export default function HomePage() {
       {/* ══════════════════ CATEGORIES GRID ════════════════════════ */}
       <section style={{ padding: '4rem 0', borderBottom: '2px solid var(--border)' }}>
         <div className="container">
-          <div style={{ marginBottom: '2.5rem' }}>
-            <p style={{ fontWeight: 700, color: 'var(--primary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: '0.5rem' }}>
-              Parcourez par catégorie
-            </p>
-            <h2 style={{ marginBottom: '0.5rem' }}>Tout ce dont vous avez besoin,<br />au même endroit.</h2>
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '1rem' }}>
-            {CATEGORIES.map(cat => (
-              <Link
-                key={cat.label}
-                href={`/search?category=${encodeURIComponent(cat.label)}`}
-                style={{
-                  background: cat.color,
-                  border: `2px solid ${cat.border}`,
-                  padding: '1.5rem 1.25rem',
-                  display: 'flex', flexDirection: 'column', gap: '0.75rem',
-                  transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-                  textDecoration: 'none', color: 'var(--text)',
-                }}
-                className="category-card"
-              >
-                <div style={{ color: 'var(--primary)' }}>{cat.icon}</div>
-                <div>
-                  <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.2rem' }}>{cat.label}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>{cat.tag}</div>
-                </div>
-                <ChevronRight size={14} style={{ color: 'var(--primary)', marginTop: 'auto', alignSelf: 'flex-end' }} />
-              </Link>
-            ))}
-          </div>
+          <CategoryBento />
         </div>
       </section>
 
