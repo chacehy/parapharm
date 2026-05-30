@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
   LayoutDashboard, Package, ClipboardList, Bell,
-  TrendingUp, Clock, CheckCircle, XCircle
+  TrendingUp, Clock, CheckCircle, XCircle,
+  Coins, Megaphone
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { Profile, Order } from '@/lib/database.types'
@@ -16,13 +17,14 @@ interface Stats {
   cancelled: number
   revenue: number
   totalProducts: number
+  activeCampaigns: number
 }
 
 export default function DashboardPage() {
   const router = useRouter()
   const supabase = createClient()
   const [profile, setProfile] = useState<Profile | null>(null)
-  const [stats, setStats] = useState<Stats>({ totalOrders: 0, pending: 0, delivered: 0, cancelled: 0, revenue: 0, totalProducts: 0 })
+  const [stats, setStats] = useState<Stats>({ totalOrders: 0, pending: 0, delivered: 0, cancelled: 0, revenue: 0, totalProducts: 0, activeCampaigns: 0 })
   const [recentOrders, setRecentOrders] = useState<Order[]>([])
   const [customerNames, setCustomerNames] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -36,25 +38,30 @@ export default function DashboardPage() {
       if (!p || p.role !== 'pharmacy') { router.push('/'); return }
       setProfile(p)
 
-      const [ordersRes, productsRes] = await Promise.all([
+      const [ordersRes, productsRes, campaignsRes] = await Promise.all([
         supabase.from('orders').select('*').eq('pharmacy_id', user.id).order('created_at', { ascending: false }) as any,
         supabase.from('products').select('id', { count: 'exact' }).eq('pharmacy_id', user.id) as any,
+        supabase.from('keyword_bids').select('id', { count: 'exact' }).eq('pharmacy_id', user.id).eq('is_active', true) as any,
       ])
 
       const orders = ordersRes.data as Order[] | null
       const productCount = productsRes.count
+      const activeCampaignsCount = campaignsRes.count ?? 0
+
+      const revenue = orders ? orders.filter((o) => o.status === 'delivered').reduce((s, o) => s + o.total_price, 0) : 0
+      
+      setStats({
+        totalOrders: orders?.length ?? 0,
+        pending: orders ? orders.filter((o) => o.status === 'pending').length : 0,
+        delivered: orders ? orders.filter((o) => o.status === 'delivered').length : 0,
+        cancelled: orders ? orders.filter((o) => o.status === 'cancelled').length : 0,
+        revenue,
+        totalProducts: productCount ?? 0,
+        activeCampaigns: activeCampaignsCount,
+      })
 
       if (orders) {
         setRecentOrders(orders.slice(0, 5))
-        const revenue = orders.filter((o) => o.status === 'delivered').reduce((s, o) => s + o.total_price, 0)
-        setStats({
-          totalOrders: orders.length,
-          pending: orders.filter((o) => o.status === 'pending').length,
-          delivered: orders.filter((o) => o.status === 'delivered').length,
-          cancelled: orders.filter((o) => o.status === 'cancelled').length,
-          revenue,
-          totalProducts: productCount ?? 0,
-        })
 
         const ids = [...new Set(orders.map((o) => o.customer_id))]
         if (ids.length > 0) {
@@ -91,12 +98,12 @@ export default function DashboardPage() {
   )
 
   const statCards = [
-    { label: 'Total Orders', value: stats.totalOrders, icon: <ClipboardList size={20} color="var(--primary)" />, bg: 'var(--green-50)' },
-    { label: 'Pending', value: stats.pending, icon: <Clock size={20} color="#92400e" />, bg: '#fef9c3' },
-    { label: 'Delivered', value: stats.delivered, icon: <CheckCircle size={20} color="#065f46" />, bg: 'var(--green-100)' },
+    { label: 'Marketing Credits', value: profile?.credits || 0, icon: <Coins size={20} color="var(--primary)" />, bg: 'var(--green-50)' },
+    { label: 'Active Ads', value: stats.activeCampaigns, icon: <Megaphone size={20} color="var(--primary)" />, bg: 'var(--green-50)' },
     { label: 'Revenue (DZD)', value: stats.revenue.toFixed(0), icon: <TrendingUp size={20} color="var(--primary)" />, bg: 'var(--green-50)' },
     { label: 'Products Listed', value: stats.totalProducts, icon: <Package size={20} color="#1e40af" />, bg: '#dbeafe' },
-    { label: 'Cancelled', value: stats.cancelled, icon: <XCircle size={20} color="#991b1b" />, bg: '#fee2e2' },
+    { label: 'Total Orders', value: stats.totalOrders, icon: <ClipboardList size={20} color="var(--primary)" />, bg: 'var(--green-50)' },
+    { label: 'Pending Orders', value: stats.pending, icon: <Clock size={20} color="#92400e" />, bg: '#fef9c3' },
   ]
 
   return (
@@ -108,6 +115,7 @@ export default function DashboardPage() {
           <p style={{ color: 'var(--muted)' }}>Welcome back, <strong>{profile?.name}</strong></p>
         </div>
         <div style={{ display: 'flex', gap: '0.75rem' }}>
+          <Link href="/dashboard/campaigns" className="btn btn-outline btn-sm"><Megaphone size={14} /> Campaigns</Link>
           <Link href="/dashboard/products" className="btn btn-outline btn-sm"><Package size={14} /> Products</Link>
           <Link href="/dashboard/orders" className="btn btn-primary btn-sm"><ClipboardList size={14} /> Orders</Link>
         </div>
@@ -132,6 +140,8 @@ export default function DashboardPage() {
           { href: '/dashboard', label: 'Overview', icon: <LayoutDashboard size={18} /> },
           { href: '/dashboard/products', label: 'Products', icon: <Package size={18} /> },
           { href: '/dashboard/orders', label: 'Orders', icon: <ClipboardList size={18} /> },
+          { href: '/dashboard/campaigns', label: 'Ad Campaigns', icon: <Megaphone size={18} /> },
+          { href: '/dashboard/credits', label: 'Credits', icon: <Coins size={18} /> },
           { href: '/notifications', label: 'Notifications', icon: <Bell size={18} /> },
         ].map((nav) => (
           <Link key={nav.href} href={nav.href} className="card card-hover" style={{ padding: '1.25rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', textAlign: 'center', color: 'var(--primary)', textDecoration: 'none' }}>

@@ -213,6 +213,7 @@ export type Database = {
           name: string
           phone: string | null
           role: string
+          credits: number | null
         }
         Insert: {
           address?: string | null
@@ -223,6 +224,7 @@ export type Database = {
           name: string
           phone?: string | null
           role: string
+          credits?: number | null
         }
         Update: {
           address?: string | null
@@ -233,8 +235,89 @@ export type Database = {
           name?: string
           phone?: string | null
           role?: string
+          credits?: number | null
         }
         Relationships: []
+      }
+      keyword_bids: {
+        Row: {
+          id: string
+          pharmacy_id: string
+          product_id: string | null
+          keyword: string
+          bid_amount: number
+          is_active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pharmacy_id: string
+          product_id?: string | null
+          keyword: string
+          bid_amount: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pharmacy_id?: string
+          product_id?: string | null
+          keyword?: string
+          bid_amount?: number
+          is_active?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "keyword_bids_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "keyword_bids_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      credit_transactions: {
+        Row: {
+          id: string
+          pharmacy_id: string
+          amount: number
+          type: string
+          description: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          pharmacy_id: string
+          amount: number
+          type: string
+          description?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          pharmacy_id?: string
+          amount?: number
+          type?: string
+          description?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "credit_transactions_pharmacy_id_fkey"
+            columns: ["pharmacy_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          }
+        ]
       }
     }
     Views: {
@@ -274,5 +357,7 @@ export type Order = Database['public']['Tables']['orders']['Row']
 export type OrderItem = Database['public']['Tables']['order_items']['Row']
 export type Notification = Database['public']['Tables']['notifications']['Row']
 export type NearbyPharmacy = Database['public']['Functions']['find_nearby_pharmacies']['Returns'][0]
+export type KeywordBid = Database['public']['Tables']['keyword_bids']['Row']
+export type CreditTransaction = Database['public']['Tables']['credit_transactions']['Row']
 
 export type OrderStatus = 'pending' | 'accepted' | 'preparing' | 'ready' | 'delivered' | 'cancelled'
