@@ -1,11 +1,11 @@
-import { createClient } from '@/lib/supabase/client';
+import { createClient } from '@/lib/supabase/server';
 import { createChargilyCheckout } from '@/lib/chargily';
 import { redirect } from 'next/navigation';
 import { Shield, Zap, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 export default async function CreditsPage({ searchParams }: { searchParams: { success?: string, canceled?: string } }) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
