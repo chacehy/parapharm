@@ -2,7 +2,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import {
   Search, MapPin, ShoppingBag, Zap, Shield, Clock,
-  Star, CheckCircle
+  Star, CheckCircle, Leaf, HeartPulse, Pill, Sparkles, Flame
 } from 'lucide-react'
 import CategoryBento from '@/components/CategoryBento'
 
