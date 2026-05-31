@@ -4,7 +4,8 @@ import { redirect } from 'next/navigation';
 import { Shield, Zap, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
-export default async function CreditsPage({ searchParams }: { searchParams: { success?: string, canceled?: string } }) {
+export default async function CreditsPage({ searchParams }: { searchParams: Promise<{ success?: string, canceled?: string }> }) {
+  const resolvedSearchParams = await searchParams;
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
 
@@ -59,13 +60,13 @@ export default async function CreditsPage({ searchParams }: { searchParams: { su
         <Link href="/dashboard" className="btn btn-sm">Back to Dashboard</Link>
       </div>
 
-      {searchParams.success && (
+      {resolvedSearchParams.success && (
         <div style={{ padding: '1rem', background: 'var(--green-50)', color: 'var(--green-800)', border: '2px solid var(--green-200)', borderRadius: '8px', marginBottom: '2rem' }}>
           <strong>Payment Successful!</strong> Your credits will be added to your account momentarily.
         </div>
       )}
 
-      {searchParams.canceled && (
+      {resolvedSearchParams.canceled && (
         <div style={{ padding: '1rem', background: '#fee2e2', color: '#991b1b', border: '2px solid #fecaca', borderRadius: '8px', marginBottom: '2rem' }}>
           <strong>Payment Cancelled.</strong> You have not been charged.
         </div>
