@@ -58,7 +58,7 @@ export default function CategoryBento() {
         <p style={{ color: 'var(--muted)' }}>Trouvez rapidement ce que vous cherchez parmi notre sélection.</p>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
         {categoriesData.map((cat) => {
           const isHovered = hoveredCat === cat.id;
 
@@ -69,62 +69,85 @@ export default function CategoryBento() {
               onMouseEnter={() => setHoveredCat(cat.id)}
               onMouseLeave={() => setHoveredCat(null)}
               style={{
-                padding: '2rem',
+                padding: '1.5rem',
                 position: 'relative',
                 overflow: 'hidden',
                 display: 'flex',
                 flexDirection: 'column',
-                transition: 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
+                transition: 'all 0.75s cubic-bezier(0.32, 0.72, 0, 1)',
                 cursor: 'pointer',
-                background: isHovered ? cat.bgLight : '#fff',
+                background: '#fff',
                 borderColor: isHovered ? cat.color : 'var(--border)',
-                transform: isHovered ? 'translateY(-4px)' : 'none',
-                boxShadow: isHovered ? `0 10px 25px -5px ${cat.color}20, 0 8px 10px -6px ${cat.color}20` : '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)'
+                transform: isHovered ? 'translateY(-6px)' : 'none',
+                boxShadow: isHovered 
+                  ? `0 20px 40px -10px ${cat.color}20, 0 15px 20px -12px ${cat.color}15`
+                  : '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
+                minHeight: '112px'
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1.5rem', zIndex: 2 }}>
+              {/* Card Header */}
+              <div style={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                gap: '1rem', 
+                marginBottom: isHovered ? '1.25rem' : '0px', 
+                zIndex: 2,
+                transition: 'margin-bottom 0.75s cubic-bezier(0.32, 0.72, 0, 1)'
+              }}>
+                {/* Double-Bezel nested core for icon */}
                 <div style={{ 
                   width: '64px', height: '64px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isHovered ? cat.color : cat.bgLight,
-                  color: isHovered ? '#fff' : cat.color,
-                  transition: 'all 0.3s ease'
+                  background: isHovered ? cat.color : 'var(--green-50)',
+                  color: isHovered ? '#fff' : 'var(--primary)',
+                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                  transition: 'all 0.5s cubic-bezier(0.32, 0.72, 0, 1)'
                 }}>
                   {cat.icon}
                 </div>
-                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1.2 }}>{cat.title}</h3>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800, lineHeight: 1.2, color: 'var(--text)' }}>{cat.title}</h3>
               </div>
 
+              {/* Subcategories list wrapper (Smooth Fold/Expansion) */}
               <div style={{ 
-                display: 'grid', gridTemplateColumns: '1fr', gap: '0.5rem', zIndex: 2,
-                opacity: isHovered ? 1 : 0.7,
-                transition: 'opacity 0.3s ease'
+                display: 'grid', 
+                gridTemplateColumns: '1fr', 
+                gap: '0.5rem', 
+                zIndex: 2,
+                maxHeight: isHovered ? `${cat.subcategories.length * 48 + 30}px` : '0px',
+                opacity: isHovered ? 1 : 0,
+                overflow: 'hidden',
+                transition: 'all 0.75s cubic-bezier(0.32, 0.72, 0, 1)',
+                marginTop: isHovered ? '0.25rem' : '0px',
+                padding: '4px 12px 4px 4px'
               }}>
                 {cat.subcategories.map((sub, i) => (
                   <Link 
                     key={i} 
                     href={`/search?q=${encodeURIComponent(sub.name)}`}
                     style={{ 
-                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem', borderRadius: '8px',
-                      background: 'rgba(255,255,255,0.7)', backdropFilter: 'blur(4px)',
+                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.75rem', borderRadius: '8px',
+                      background: 'rgba(249,250,251,0.8)',
                       color: 'var(--text)', textDecoration: 'none',
-                      transition: 'all 0.2s ease',
-                      border: '1px solid rgba(0,0,0,0.05)',
-                      transform: isHovered ? 'translateX(0)' : 'translateX(-10px)',
+                      transition: 'all 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
+                      border: '1px solid var(--border)',
+                      transform: isHovered ? 'translateX(0)' : 'translateX(-12px)',
                       opacity: isHovered ? 1 : 0
                     }}
                     onMouseEnter={(e) => {
                       e.currentTarget.style.background = '#fff';
                       e.currentTarget.style.borderColor = cat.color;
-                      e.currentTarget.style.transform = 'translateX(4px)';
+                      e.currentTarget.style.transform = 'translateX(6px)';
+                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
                     }}
                     onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(255,255,255,0.7)';
-                      e.currentTarget.style.borderColor = 'rgba(0,0,0,0.05)';
+                      e.currentTarget.style.background = 'rgba(249,250,251,0.8)';
+                      e.currentTarget.style.borderColor = 'var(--border)';
                       e.currentTarget.style.transform = 'translateX(0)';
+                      e.currentTarget.style.boxShadow = 'none';
                     }}
                   >
-                    <span style={{ color: cat.color }}>{sub.icon}</span>
-                    <span style={{ fontSize: '0.95rem', fontWeight: 500 }}>{sub.name}</span>
+                    <span style={{ color: cat.color, display: 'flex', alignItems: 'center' }}>{sub.icon}</span>
+                    <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{sub.name}</span>
                   </Link>
                 ))}
               </div>

@@ -2,7 +2,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { Search, MapPin, Package, AlertCircle } from 'lucide-react'
+import { Search, MapPin, Package, AlertCircle, X, ChevronDown, SlidersHorizontal } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import type { NearbyPharmacy, Product } from '@/lib/database.types'
 
@@ -12,12 +12,38 @@ interface ProductWithPharmacy extends Product {
   search_type: 'sponsored' | 'organic'
 }
 
+const CATEGORIES_DATA = {
+  'Santé et beauté': [
+    'Protection solaire',
+    'Vitamine & complément alimentaire',
+    'Hygiène intime',
+    'Cheveux',
+    'Visage',
+    'Dents',
+    'Corps'
+  ],
+  'Bébé': [
+    'Soins bébé',
+    'Cosmétique Bébé (Couches, lingettes)'
+  ],
+  'Complément alimentaire (Sport)': [
+    'Protéines Whey',
+    'Mass Grainer',
+    'Fast Burner',
+    'BCAA',
+    'Créatine',
+    'Pré workout',
+    'Vitamine',
+    'Acide Aminé'
+  ]
+}
+
 function SearchContent() {
   const params = useSearchParams()
   const router = useRouter()
   const supabase = createClient()
 
-  const [query, setQuery] = useState(params.get('q') ?? '')
+  const [query, setQuery] = useState('')
   const [radius, setRadius] = useState(10)
   const [productsGrid, setProductsGrid] = useState<ProductWithPharmacy[]>([])
   const [pharmaciesFound, setPharmaciesFound] = useState(0)
@@ -25,6 +51,12 @@ function SearchContent() {
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locationError, setLocationError] = useState<string | null>(null)
+
+  // Filters State
+  const [selectedCategory, setSelectedCategory] = useState('')
+  const [selectedSubcategory, setSelectedSubcategory] = useState('')
+  const [subcatLookup, setSubcatLookup] = useState<Record<string, string>>({})
+  const [showFilters, setShowFilters] = useState(false)
 
   const requestLocation = useCallback(() => {
     if (!navigator.geolocation) { setLocationError('Geolocation not supported by this browser.'); return }
@@ -43,46 +75,98 @@ function SearchContent() {
     )
   }, [])
 
-  useEffect(() => { requestLocation() }, [requestLocation])
-
-  const doSearch = useCallback(async () => {
+  const doSearch = useCallback(async (searchQuery = query, searchRadius = radius) => {
     if (!coords) return
     setLoading(true)
 
     const { data: rankedProducts, error } = await (supabase as any).rpc('search_products_amazon_model', {
-      p_query: query.trim(),
+      p_query: searchQuery.trim(),
       p_lat: coords.lat,
       p_lng: coords.lng,
-      p_radius_km: radius,
+      p_radius_km: searchRadius,
     }) as { data: ProductWithPharmacy[] | null, error: any }
 
     if (error || !rankedProducts || rankedProducts.length === 0) { 
-      // Fallback or count pharmacies? We don't return pharmacy count directly now.
-      // But we can check if it's empty.
-      setPharmaciesFound(rankedProducts ? 1 : 0) // Just to avoid the "No pharmacies found" empty state incorrectly if there are no products. Wait, actually we don't have separate pharmacy count.
+      setPharmaciesFound(0)
       setProductsGrid([])
       setLoading(false)
       return 
     }
 
-    // Products are already sorted by the RPC (rank_score DESC, distance_km ASC)
-    setPharmaciesFound(1) // Hack to bypass empty state
+    setPharmaciesFound(1)
     setProductsGrid(rankedProducts)
     setLoading(false)
   }, [coords, query, radius, supabase])
 
+  // Get geolocation on mount
+  useEffect(() => { requestLocation() }, [requestLocation])
+
+  // Sync parameters & lookup table on mount / coords resolution
   useEffect(() => {
-    if (coords) doSearch()
-  }, [coords]) // Search runs initially when coords are found, otherwise relies on form submit
+    const fetchSubcats = async () => {
+      const { data } = await supabase.from('products').select('id, subcategory')
+      if (data) {
+        const lookup: Record<string, string> = {}
+        data.forEach(p => {
+          if (p.subcategory) lookup[p.id] = p.subcategory
+        })
+        setSubcatLookup(lookup)
+      }
+    }
+    fetchSubcats()
+
+    const initialQuery = params.get('q') ?? ''
+    if (initialQuery) {
+      if (Object.keys(CATEGORIES_DATA).includes(initialQuery)) {
+        setSelectedCategory(initialQuery)
+        setShowFilters(true)
+        setQuery('')
+        if (coords) doSearch('', radius)
+      } else {
+        let found = false
+        for (const [cat, subs] of Object.entries(CATEGORIES_DATA)) {
+          if (subs.some(s => s.toLowerCase() === initialQuery.toLowerCase() || initialQuery.toLowerCase().includes(s.toLowerCase()))) {
+            setSelectedCategory(cat)
+            const matchedSub = subs.find(s => s.toLowerCase() === initialQuery.toLowerCase() || initialQuery.toLowerCase().includes(s.toLowerCase())) || initialQuery
+            setSelectedSubcategory(matchedSub)
+            setShowFilters(true)
+            setQuery('')
+            found = true
+            if (coords) doSearch('', radius)
+            break
+          }
+        }
+        if (!found) {
+          setQuery(initialQuery)
+          if (coords) doSearch(initialQuery, radius)
+        }
+      }
+    } else if (coords) {
+      doSearch('', radius)
+    }
+  }, [coords, params, supabase])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
-    doSearch()
+    doSearch(query, radius)
   }
+
+  const handleRadiusChange = (newRadius: number) => {
+    setRadius(newRadius)
+    doSearch(query, newRadius)
+  }
+
+  const handleReset = () => {
+    setQuery('')
+    setSelectedCategory('')
+    setSelectedSubcategory('')
+    doSearch('', radius)
+  }
+
+
 
   const handleProductClick = async (product: ProductWithPharmacy) => {
     if (product.search_type === 'sponsored' && query.trim()) {
-      // Background RPC call, no need to await it
       (supabase as any).rpc('register_sponsored_click', {
         p_pharmacy_id: product.pharmacy_id,
         p_product_id: product.id,
@@ -92,39 +176,177 @@ function SearchContent() {
     }
   }
 
+  // Client-side filtering
+  const filteredProducts = productsGrid.filter(product => {
+    if (selectedCategory) {
+      if (!product.category || product.category.toLowerCase() !== selectedCategory.toLowerCase()) {
+        return false
+      }
+    }
+    if (selectedSubcategory) {
+      const productSubcat = subcatLookup[product.id]
+      if (!productSubcat || productSubcat.toLowerCase() !== selectedSubcategory.toLowerCase()) {
+        return false
+      }
+    }
+    return true
+  })
+
   return (
-    <div className="container" style={{ padding: '2rem 1.5rem' }}>
-      {/* Header */}
-      <div style={{ marginBottom: '2rem' }}>
-        <h1 style={{ marginBottom: '0.5rem' }}>Find Products Nearby</h1>
-        <p style={{ color: 'var(--muted)' }}>Searching within <strong>{radius} km</strong> of your location</p>
+    <div className="container" style={{ padding: '1rem 1.5rem', maxWidth: '1000px', margin: '0 auto' }}>
+      {/* Compact Header */}
+      <div style={{ marginBottom: '1.25rem', textAlign: 'center' }}>
+        <h1 style={{ marginBottom: '0.25rem', fontSize: 'clamp(1.75rem, 4vw, 2.5rem)', fontWeight: 800 }}>Find Products Nearby</h1>
+        <p style={{ color: 'var(--muted)', fontSize: '0.9rem' }}>Searching within <strong>{radius} km</strong> of your location</p>
       </div>
 
       {/* Search bar */}
-      <form onSubmit={handleSearch} style={{ display: 'flex', gap: '0', marginBottom: '1.5rem', flexWrap: 'wrap' }}>
-        <div style={{ position: 'relative', flex: 1, minWidth: '200px' }}>
+      <form onSubmit={handleSearch} className="search-form">
+        <div className="search-input-wrapper">
           <Search size={16} style={{ position: 'absolute', left: '0.875rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--muted)', pointerEvents: 'none' }} />
           <input
             type="text"
-            className="input"
+            className="input search-input"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search products (e.g. Vitamin C, Omega-3…)"
-            style={{ paddingLeft: '2.5rem', borderRight: 'none' }}
+            placeholder="Rechercher un produit (ex: Vitamine C, Protéine...)"
+            style={{ paddingLeft: '2.5rem' }}
           />
         </div>
-        <select
-          className="input"
-          value={radius}
-          onChange={(e) => setRadius(Number(e.target.value))}
-          style={{ width: '130px', borderLeft: 'none', borderRight: 'none' }}
-        >
-          {[2, 5, 10, 20, 50, 100, 500].map((r) => <option key={r} value={r}>{r} km</option>)}
-        </select>
-        <button type="submit" className="btn btn-primary" disabled={!coords || loading}>
-          {loading ? <span className="spinner" /> : <><Search size={16} /> Search</>}
+        <div className="search-radius-wrapper">
+          <select
+            className="input search-radius-select"
+            value={radius}
+            onChange={(e) => handleRadiusChange(Number(e.target.value))}
+          >
+            {[2, 5, 10, 20, 50, 100, 500].map((r) => <option key={r} value={r}>{r} km</option>)}
+          </select>
+          <ChevronDown size={14} style={{ position: 'absolute', right: '0.75rem', top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none', color: 'var(--gray-500)' }} />
+        </div>
+        <button type="submit" className="btn btn-primary search-btn" disabled={!coords || loading}>
+          {loading ? <span className="spinner" /> : <><Search size={16} /> Rechercher</>}
         </button>
       </form>
+
+      {/* Filters Toggle Button */}
+      <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '1rem' }}>
+        <button
+          onClick={() => setShowFilters(!showFilters)}
+          className="btn btn-ghost"
+          style={{
+            height: '42px',
+            borderRadius: '12px',
+            padding: '0 1.25rem',
+            border: '2px solid var(--border)',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            fontSize: '0.9rem',
+            fontWeight: 600,
+            background: showFilters ? 'var(--green-50)' : '#fff',
+            color: showFilters ? 'var(--primary)' : 'var(--gray-700)',
+            borderColor: showFilters ? 'var(--primary)' : 'var(--border)',
+            transition: 'all 0.2s ease'
+          }}
+        >
+          <SlidersHorizontal size={16} />
+          {showFilters ? 'Masquer les filtres' : 'Filtres'}
+          {(selectedCategory || selectedSubcategory) && (
+            <span style={{
+              background: 'var(--primary)',
+              color: '#fff',
+              fontSize: '0.75rem',
+              borderRadius: '50%',
+              width: '18px',
+              height: '18px',
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginLeft: '0.25rem',
+              fontWeight: 700
+            }}>
+              {selectedSubcategory ? 2 : 1}
+            </span>
+          )}
+        </button>
+      </div>
+
+      {/* Dropdown Filters under Search Bar (Progressive Disclosure) */}
+      <div style={{ 
+        maxHeight: showFilters ? '150px' : '0px',
+        opacity: showFilters ? 1 : 0,
+        overflow: 'hidden',
+        transition: 'all 0.4s cubic-bezier(0.16, 1, 0.3, 1)',
+        display: 'flex', 
+        gap: '0.75rem', 
+        marginBottom: showFilters ? '2rem' : '0px', 
+        flexWrap: 'wrap', 
+        justifyContent: 'center', 
+        alignItems: 'center',
+        padding: showFilters ? '0.25rem 0' : '0px'
+      }}>
+        {/* Main Category Selector */}
+        <div className="custom-select-wrapper" style={{
+          transition: 'all 0.3s cubic-bezier(0.16, 1, 0.3, 1)',
+          transform: showFilters ? 'translateY(0)' : 'translateY(-10px)',
+          opacity: showFilters ? 1 : 0
+        }}>
+          <select
+            className="custom-select"
+            value={selectedCategory}
+            onChange={(e) => {
+              setSelectedCategory(e.target.value)
+              setSelectedSubcategory('')
+            }}
+          >
+            <option value="">Toutes les catégories</option>
+            {Object.keys(CATEGORIES_DATA).map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+          <ChevronDown size={16} className="custom-select-icon" />
+        </div>
+
+        {/* Subcategory Selector (Reveals only when a category is selected) */}
+        {selectedCategory && (
+          <div className="custom-select-wrapper animate-slide-down-fade">
+            <select
+              className="custom-select"
+              value={selectedSubcategory}
+              onChange={(e) => setSelectedSubcategory(e.target.value)}
+            >
+              <option value="">Toutes les sous-catégories</option>
+              {CATEGORIES_DATA[selectedCategory as keyof typeof CATEGORIES_DATA].map(sub => (
+                <option key={sub} value={sub}>{sub}</option>
+              ))}
+            </select>
+            <ChevronDown size={16} className="custom-select-icon" />
+          </div>
+        )}
+
+        {(selectedCategory || selectedSubcategory || query) && (
+          <button
+            onClick={handleReset}
+            className="btn btn-ghost"
+            style={{ 
+              height: '46px', 
+              borderRadius: '12px', 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '0.35rem', 
+              fontSize: '0.875rem', 
+              color: '#dc2626',
+              padding: '0 1.25rem',
+              border: '2px solid transparent',
+              transition: 'all 0.2s ease',
+              transform: showFilters ? 'translateY(0)' : 'translateY(-10px)',
+              opacity: showFilters ? 1 : 0
+            }}
+          >
+            <X size={14} /> Réinitialiser
+          </button>
+        )}
+      </div>
 
       {/* Location status */}
       {locationError && (
@@ -146,13 +368,15 @@ function SearchContent() {
         </div>
       )}
 
-      {/* Results */}
+      {/* Results & Categories Grid */}
       {loading && (
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', gap: '1rem' }}>
           <span className="spinner" />
           <span style={{ color: 'var(--muted)' }}>Finding nearby products…</span>
         </div>
       )}
+
+
 
       {!loading && coords && pharmaciesFound === 0 && (
         <div className="empty-state">
@@ -162,25 +386,25 @@ function SearchContent() {
         </div>
       )}
 
-      {!loading && coords && pharmaciesFound > 0 && productsGrid.length === 0 && (
+      {!loading && coords && pharmaciesFound > 0 && filteredProducts.length === 0 && (
         <div className="empty-state">
           <Package size={48} />
           <h3>No matching products</h3>
-          <p>We found {pharmaciesFound} pharmacies nearby, but none had "{query}" in stock.</p>
-          <p>Try searching for a different product or increasing your radius.</p>
+          <p>We found {pharmaciesFound} pharmacies nearby, but none had matching products in stock.</p>
+          <p>Try searching for a different product, selecting another category, or increasing your radius.</p>
         </div>
       )}
 
-      {!loading && productsGrid.length > 0 && (
+      {!loading && filteredProducts.length > 0 && (
         <>
-          {productsGrid.filter((p) => p.search_type === 'sponsored').length > 0 && (
+          {filteredProducts.filter((p) => p.search_type === 'sponsored').length > 0 && (
             <div style={{ marginBottom: '2.5rem', background: 'linear-gradient(to right, rgba(234, 179, 8, 0.05), rgba(234, 179, 8, 0.02))', padding: '1.5rem', borderRadius: '12px', border: '1px solid rgba(234, 179, 8, 0.2)' }}>
               <h2 style={{ fontSize: '1rem', color: '#854d0e', marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 <span style={{ display: 'inline-block', width: '8px', height: '8px', borderRadius: '50%', background: '#eab308' }}></span>
-                Sponsored
+                Sponsorisé
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                {productsGrid.filter((p) => p.search_type === 'sponsored').map((product) => (
+                {filteredProducts.filter((p) => p.search_type === 'sponsored').map((product) => (
                   <Link key={`sponsored-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid rgba(234, 179, 8, 0.4)', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                       {product.image_url ? (
@@ -212,9 +436,9 @@ function SearchContent() {
           )}
 
           <div>
-            {productsGrid.filter((p) => p.search_type === 'organic').length > 0 ? (
+            {filteredProducts.filter((p) => p.search_type === 'organic').length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
-                {productsGrid.filter((p) => p.search_type === 'organic').map((product) => (
+                {filteredProducts.filter((p) => p.search_type === 'organic').map((product) => (
                   <Link key={`organic-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       {product.image_url ? (
