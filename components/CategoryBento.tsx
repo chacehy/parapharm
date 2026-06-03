@@ -77,7 +77,7 @@ export default function CategoryBento() {
                 transition: 'all 0.75s cubic-bezier(0.32, 0.72, 0, 1)',
                 cursor: 'pointer',
                 background: '#fff',
-                borderColor: isHovered ? cat.color : 'var(--border)',
+                borderColor: isHovered ? cat.color : 'var(--green-200)',
                 transform: isHovered ? 'translateY(-6px)' : 'none',
                 boxShadow: isHovered 
                   ? `0 20px 40px -10px ${cat.color}20, 0 15px 20px -12px ${cat.color}15`
@@ -124,29 +124,14 @@ export default function CategoryBento() {
                   <Link 
                     key={i} 
                     href={`/search?q=${encodeURIComponent(sub.name)}`}
+                    className="bento-subcat-link"
                     style={{ 
-                      display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.65rem 0.75rem', borderRadius: '8px',
-                      background: 'rgba(249,250,251,0.8)',
-                      color: 'var(--text)', textDecoration: 'none',
-                      transition: 'all 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
-                      border: '1px solid var(--border)',
+                      '--hover-color': cat.color,
                       transform: isHovered ? 'translateX(0)' : 'translateX(-12px)',
                       opacity: isHovered ? 1 : 0
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.background = '#fff';
-                      e.currentTarget.style.borderColor = cat.color;
-                      e.currentTarget.style.transform = 'translateX(6px)';
-                      e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,0.03)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.background = 'rgba(249,250,251,0.8)';
-                      e.currentTarget.style.borderColor = 'var(--border)';
-                      e.currentTarget.style.transform = 'translateX(0)';
-                      e.currentTarget.style.boxShadow = 'none';
-                    }}
+                    } as React.CSSProperties}
                   >
-                    <span style={{ color: cat.color, display: 'flex', alignItems: 'center' }}>{sub.icon}</span>
+                    <span className="subcat-icon">{sub.icon}</span>
                     <span style={{ fontSize: '0.9rem', fontWeight: 600 }}>{sub.name}</span>
                   </Link>
                 ))}

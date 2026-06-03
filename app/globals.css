@@ -514,3 +514,33 @@ h4 { font-size: 1rem;    font-weight: 600; }
 .animate-slide-down-fade {
   animation: slideDownFade 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ─── Bento Subcategory Links ─────────────────────────────────── */
+.bento-subcat-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 8px;
+  background: rgba(249, 250, 251, 0.8);
+  color: var(--text);
+  text-decoration: none;
+  transition: all 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+  border: 1px solid var(--border);
+}
+.bento-subcat-link .subcat-icon {
+  color: var(--primary); /* Green by default */
+  display: flex;
+  align-items: center;
+  transition: color 0.5s cubic-bezier(0.32, 0.72, 0, 1);
+}
+.bento-subcat-link:hover {
+  background: #fff !important;
+  border-color: var(--hover-color) !important;
+  transform: translateX(6px) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03) !important;
+}
+.bento-subcat-link:hover .subcat-icon {
+  color: var(--hover-color) !important;
+}
+
