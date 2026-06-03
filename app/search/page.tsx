@@ -405,7 +405,7 @@ function SearchContent() {
               </h2>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
                 {filteredProducts.filter((p) => p.search_type === 'sponsored').map((product) => (
-                  <Link key={`sponsored-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
+                  <Link key={`sponsored-${product.id}`} href={`/product/${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column', position: 'relative', border: '1px solid rgba(234, 179, 8, 0.4)', background: '#fff', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)' }}>
                       {product.image_url ? (
                         <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }} />
@@ -439,7 +439,7 @@ function SearchContent() {
             {filteredProducts.filter((p) => p.search_type === 'organic').length > 0 ? (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '1.5rem' }}>
                 {filteredProducts.filter((p) => p.search_type === 'organic').map((product) => (
-                  <Link key={`organic-${product.id}`} href={`/pharmacy/${product.pharmacy_id}?highlight=${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
+                  <Link key={`organic-${product.id}`} href={`/product/${product.id}`} onClick={() => handleProductClick(product)} style={{ textDecoration: 'none' }}>
                     <div className="card card-hover" style={{ padding: '1.25rem', height: '100%', display: 'flex', flexDirection: 'column' }}>
                       {product.image_url ? (
                         <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', marginBottom: '1rem', borderRadius: '4px', border: '1px solid var(--border)' }} />

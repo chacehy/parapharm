@@ -6,10 +6,36 @@ import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/Toast'
 import type { Product, Profile } from '@/lib/database.types'
 
-const CATEGORIES = ['Vitamins', 'Supplements', 'Skincare', 'Baby', 'Orthopedics', 'Homeopathy', 'Other']
+const CATEGORIES = ['Santé et beauté', 'Bébé', 'Complément alimentaire (Sport)', 'Other']
+
+const CATEGORIES_DATA = {
+  'Santé et beauté': [
+    'Protection solaire',
+    'Vitamine & complément alimentaire',
+    'Hygiène intime',
+    'Cheveux',
+    'Visage',
+    'Dents',
+    'Corps'
+  ],
+  'Bébé': [
+    'Soins bébé',
+    'Cosmétique Bébé (Couches, lingettes)'
+  ],
+  'Complément alimentaire (Sport)': [
+    'Protéines Whey',
+    'Mass Grainer',
+    'Fast Burner',
+    'BCAA',
+    'Créatine',
+    'Pré workout',
+    'Vitamine',
+    'Acide Aminé'
+  ]
+}
 
 const EMPTY_FORM = {
-  name: '', description: '', price: '', stock: '', category: '', image_url: '', is_available: true,
+  name: '', description: '', price: '', stock: '', category: '', subcategory: '', image_url: '', is_available: true,
 }
 
 export default function DashboardProductsPage() {
@@ -47,7 +73,7 @@ export default function DashboardProductsPage() {
     setEditing(p)
     setForm({
       name: p.name, description: p.description ?? '', price: String(p.price),
-      stock: String(p.stock), category: p.category ?? '', image_url: p.image_url ?? '', is_available: p.is_available,
+      stock: String(p.stock), category: p.category ?? '', subcategory: p.subcategory ?? '', image_url: p.image_url ?? '', is_available: p.is_available,
     })
     setShowModal(true)
   }
@@ -75,6 +101,7 @@ export default function DashboardProductsPage() {
       price: parseFloat(form.price),
       stock: parseInt(form.stock, 10),
       category: form.category || null,
+      subcategory: form.subcategory || null,
       image_url: form.image_url || null,
       is_available: form.is_available,
       pharmacy_id: profile.id,
@@ -163,7 +190,10 @@ export default function DashboardProductsPage() {
                     <p>{p.name}</p>
                     {p.description && <p style={{ fontSize: '0.75rem', color: 'var(--muted)', marginTop: '2px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '180px' }}>{p.description}</p>}
                   </td>
-                  <td>{p.category ? <span className="badge badge-gray">{p.category}</span> : '—'}</td>
+                  <td>
+                    {p.category ? <span className="badge badge-green" style={{ marginBottom: '2px', display: 'block', width: 'fit-content' }}>{p.category}</span> : '—'}
+                    {p.subcategory && <span className="badge badge-gray" style={{ display: 'block', width: 'fit-content' }}>{p.subcategory}</span>}
+                  </td>
                   <td style={{ fontWeight: 700, color: 'var(--primary)' }}>{p.price.toFixed(2)} DZD</td>
                   <td>
                     <span style={{ fontWeight: 600, color: p.stock === 0 ? '#dc2626' : p.stock < 5 ? '#92400e' : 'var(--text)' }}>{p.stock}</span>
@@ -208,22 +238,37 @@ export default function DashboardProductsPage() {
                 <textarea id="p-desc" className="input" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} placeholder="Brief product description…" style={{ minHeight: '80px', resize: 'vertical' }} />
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: '1rem' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
                 <div className="input-group">
-                  <label className="label" htmlFor="p-price">Price (DZD) <span style={{ color: '#dc2626' }}>*</span></label>
+                  <label className="label" htmlFor="p-price">Prix (DZD) <span style={{ color: '#dc2626' }}>*</span></label>
                   <input id="p-price" type="number" className="input" value={form.price} onChange={(e) => setForm((f) => ({ ...f, price: e.target.value }))} required min="0" step="0.01" placeholder="0.00" />
                 </div>
                 <div className="input-group">
                   <label className="label" htmlFor="p-stock">Stock <span style={{ color: '#dc2626' }}>*</span></label>
                   <input id="p-stock" type="number" className="input" value={form.stock} onChange={(e) => setForm((f) => ({ ...f, stock: e.target.value }))} required min="0" placeholder="0" />
                 </div>
+              </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
                 <div className="input-group">
-                  <label className="label" htmlFor="p-cat">Category</label>
-                  <select id="p-cat" className="input" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value }))}>
-                    <option value="">Select…</option>
+                  <label className="label" htmlFor="p-cat">Catégorie</label>
+                  <select id="p-cat" className="input" value={form.category} onChange={(e) => setForm((f) => ({ ...f, category: e.target.value, subcategory: '' }))}>
+                    <option value="">Sélectionner…</option>
                     {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
+
+                {form.category && CATEGORIES_DATA[form.category as keyof typeof CATEGORIES_DATA] && (
+                  <div className="input-group">
+                    <label className="label" htmlFor="p-subcat">Sous-catégorie</label>
+                    <select id="p-subcat" className="input" value={form.subcategory} onChange={(e) => setForm((f) => ({ ...f, subcategory: e.target.value }))}>
+                      <option value="">Sélectionner…</option>
+                      {CATEGORIES_DATA[form.category as keyof typeof CATEGORIES_DATA].map((sub) => (
+                        <option key={sub} value={sub}>{sub}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
               </div>
 
               {/* Image upload */}

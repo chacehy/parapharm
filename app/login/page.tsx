@@ -29,7 +29,12 @@ function LoginContent() {
     if (error) { toast.error(error.message); return }
     const { data: profile } = await supabase.from('profiles').select('role').eq('id', data.user.id).single() as any
     toast.success('Welcome back!')
-    router.push(profile?.role === 'pharmacy' ? '/dashboard' : '/search')
+    const nextParam = params.get('next')
+    if (nextParam) {
+      router.push(nextParam)
+    } else {
+      router.push(profile?.role === 'pharmacy' ? '/dashboard' : '/search')
+    }
     router.refresh()
   }
 

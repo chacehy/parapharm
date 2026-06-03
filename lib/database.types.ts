@@ -168,6 +168,7 @@ export type Database = {
           pharmacy_id: string
           price: number
           stock: number
+          subcategory: string | null
         }
         Insert: {
           category?: string | null
@@ -180,6 +181,7 @@ export type Database = {
           pharmacy_id: string
           price: number
           stock?: number
+          subcategory?: string | null
         }
         Update: {
           category?: string | null
@@ -192,6 +194,7 @@ export type Database = {
           pharmacy_id?: string
           price?: number
           stock?: number
+          subcategory?: string | null
         }
         Relationships: [
           {

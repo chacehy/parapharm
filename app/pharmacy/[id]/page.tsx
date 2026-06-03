@@ -161,39 +161,74 @@ function PharmacyContent() {
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '1.25rem' }}>
                 {filtered.map((product) => (
                   <div key={product.id} id={`product-${product.id}`}
-                    className="card"
+                    className="card card-hover"
                     style={{
                       transition: 'all 0.2s',
                       outline: highlight === product.id ? '3px solid var(--primary)' : 'none',
                       outlineOffset: '2px',
+                      position: 'relative',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      minHeight: '330px'
                     }}>
-                    {product.image_url ? (
-                      <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '160px', objectFit: 'cover', borderBottom: '2px solid var(--border)' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '160px', background: 'var(--green-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid var(--border)' }}>
-                        <Package size={32} color="var(--green-300)" />
-                      </div>
-                    )}
-                    <div style={{ padding: '1rem' }}>
-                      {product.category && <span className="badge badge-gray" style={{ marginBottom: '0.5rem' }}>{product.category}</span>}
-                      <h4 style={{ marginBottom: '0.25rem', fontSize: '0.9375rem' }}>{product.name}</h4>
-                      {product.description && <p style={{ fontSize: '0.8rem', color: 'var(--muted)', marginBottom: '0.75rem', lineHeight: 1.5 }}>{product.description}</p>}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto' }}>
-                        <div>
-                          <p style={{ fontWeight: 700, fontSize: '1.1rem', color: 'var(--primary)' }}>{product.price.toFixed(2)} DZD</p>
-                          <p style={{ fontSize: '0.75rem', color: product.stock > 0 ? 'var(--green-600)' : '#dc2626' }}>
-                            {product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}
-                          </p>
+                    <Link href={`/product/${product.id}`} style={{ textDecoration: 'none', color: 'inherit', display: 'block', height: '100%' }}>
+                      {product.image_url ? (
+                        <img src={product.image_url} alt={product.name} style={{ width: '100%', height: '150px', objectFit: 'cover', borderBottom: '2px solid var(--border)' }} />
+                      ) : (
+                        <div style={{ width: '100%', height: '150px', background: 'var(--green-50)', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid var(--border)' }}>
+                          <Package size={32} color="var(--green-300)" />
                         </div>
-                        <button
-                          onClick={() => handleAddToCart(product)}
-                          className="btn btn-primary btn-sm"
-                          disabled={product.stock === 0 || adding === product.id}
-                        >
-                          {adding === product.id ? <span className="spinner" /> : <ShoppingCart size={14} />}
-                          Add
-                        </button>
+                      )}
+                      <div style={{ padding: '0.85rem', paddingBottom: '4.5rem' }}>
+                        {product.category && <span className="badge badge-gray" style={{ marginBottom: '0.35rem', fontSize: '0.7rem' }}>{product.category}</span>}
+                        <h4 style={{ marginBottom: '0.2rem', fontSize: '0.875rem', fontWeight: 700 }}>{product.name}</h4>
+                        {product.description && (
+                          <p style={{ 
+                            fontSize: '0.75rem', 
+                            color: 'var(--muted)', 
+                            lineHeight: 1.4,
+                            display: '-webkit-box',
+                            WebkitLineClamp: 2,
+                            WebkitBoxOrient: 'vertical',
+                            overflow: 'hidden'
+                          }}>
+                            {product.description}
+                          </p>
+                        )}
                       </div>
+                    </Link>
+
+                    <div style={{ 
+                      position: 'absolute', 
+                      bottom: '0', 
+                      left: '0', 
+                      right: '0', 
+                      padding: '0.85rem', 
+                      background: 'rgba(255, 255, 255, 0.95)', 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      borderTop: '1px solid var(--gray-100)'
+                    }}>
+                      <div>
+                        <p style={{ fontWeight: 800, fontSize: '0.95rem', color: 'var(--primary)', margin: 0 }}>{product.price.toFixed(2)} DZD</p>
+                        <p style={{ fontSize: '0.7rem', color: product.stock > 0 ? 'var(--green-600)' : '#dc2626', margin: 0, fontWeight: 600 }}>
+                          {product.stock > 0 ? `${product.stock} en stock` : 'Rupture'}
+                        </p>
+                      </div>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault()
+                          e.stopPropagation()
+                          handleAddToCart(product)
+                        }}
+                        className="btn btn-primary btn-sm"
+                        disabled={product.stock === 0 || adding === product.id}
+                        style={{ height: '32px', borderRadius: '0px' }}
+                      >
+                        {adding === product.id ? <span className="spinner" /> : <ShoppingCart size={12} />}
+                        Ajouter
+                      </button>
                     </div>
                   </div>
                 ))}
