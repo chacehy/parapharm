@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useState, useCallback, Suspense } from 'react'
+import { useEffect, useState, useCallback, Suspense, useRef } from 'react'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import { MapPin, ShoppingCart, Package, Phone, ChevronLeft, Minus, Plus, AlertCircle, MapPinOff, Check } from 'lucide-react'
 import Link from 'next/link'
@@ -45,6 +45,37 @@ function ProductContent() {
     if (!gpsCoords) { setPlaceName(null); return }
     reverseGeocode(gpsCoords.lat, gpsCoords.lng).then(setPlaceName)
   }, [gpsCoords])
+
+  const registeredRef = useRef(false)
+
+  useEffect(() => {
+    if (!product || registeredRef.current) return
+
+    const isSponsored = searchParams.get('sponsored') === 'true'
+    const keyword = searchParams.get('keyword')
+
+    if (isSponsored && keyword) {
+      registeredRef.current = true
+      
+      const registerClick = async () => {
+        try {
+          const { error } = await supabase.rpc('register_sponsored_click', {
+            p_pharmacy_id: product.pharmacy_id,
+            p_product_id: product.id,
+            p_keyword: keyword
+          })
+          if (error) {
+            console.error('Error registering sponsored click:', error)
+          } else {
+            console.log('Sponsored click registered successfully')
+          }
+        } catch (err) {
+          console.error('Error registering sponsored click:', err)
+        }
+      }
+      registerClick()
+    }
+  }, [product, searchParams, supabase])
 
   // Fetch product and pharmacy details
   useEffect(() => {
