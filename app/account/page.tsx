@@ -5,6 +5,7 @@ import { User, MapPin, Phone, Save, Upload, Building2 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/Toast'
 import { PharmacyMap } from '@/components/PharmacyMap'
+import { reverseGeocode } from '@/lib/geocoding'
 import type { Profile, NearbyPharmacy } from '@/lib/database.types'
 
 export default function AccountPage() {
@@ -21,6 +22,12 @@ export default function AccountPage() {
   const [loading, setLoading] = useState(true)
   const [passwordForm, setPasswordForm] = useState({ current: '', next: '', confirm: '' })
   const [changingPw, setChangingPw] = useState(false)
+  const [placeName, setPlaceName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!coords) { setPlaceName(null); return }
+    reverseGeocode(coords.lat, coords.lng).then(setPlaceName)
+  }, [coords])
 
   useEffect(() => {
     const load = async () => {
@@ -203,7 +210,7 @@ export default function AccountPage() {
                     </button>
                   </div>
                   <p style={{ fontSize: '0.8rem', color: coords ? 'var(--green-700)' : 'var(--muted)' }}>
-                    {coords ? `✓ ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}` : 'No GPS coordinates set — customers cannot find you on the map.'}
+                    {coords ? (placeName ? `📍 ${placeName}` : `✓ ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`) : 'No GPS coordinates set — customers cannot find you on the map.'}
                   </p>
                 </div>
               )}

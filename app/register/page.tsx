@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/Toast'
 import { MapPin, Eye, EyeOff, Building2, User } from 'lucide-react'
+import { reverseGeocode } from '@/lib/geocoding'
 
 type Role = 'customer' | 'pharmacy'
 
@@ -23,6 +24,12 @@ function RegisterContent() {
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [loading, setLoading] = useState(false)
+  const [placeName, setPlaceName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!coords) { setPlaceName(null); return }
+    reverseGeocode(coords.lat, coords.lng).then(setPlaceName)
+  }, [coords])
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
@@ -35,9 +42,16 @@ function RegisterContent() {
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setCoords(c)
         setLocating(false)
         toast.success('Location captured!')
+        reverseGeocode(c.lat, c.lng).then((name) => {
+          setPlaceName(name)
+          if (!address.trim()) {
+            setAddress(name)
+          }
+        })
       },
       (err) => {
         setLocating(false)
@@ -152,7 +166,7 @@ function RegisterContent() {
               </div>
               {coords ? (
                 <p style={{ fontSize: '0.8rem', color: 'var(--green-700)', fontWeight: 500 }}>
-                  ✓ {coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}
+                  {placeName ? `📍 ${placeName}` : `✓ ${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`}
                 </p>
               ) : (
                 <p style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>

@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/client'
 import { useCartStore } from '@/lib/cart-store'
 import { PharmacyMap } from '@/components/PharmacyMap'
 import { toast } from '@/components/Toast'
+import { reverseGeocode } from '@/lib/geocoding'
 import type { Product, Profile } from '@/lib/database.types'
 
 function ProductContent() {
@@ -38,6 +39,12 @@ function ProductContent() {
   const [gpsCoords, setGpsCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [locatingUser, setLocatingUser] = useState(false)
   const [placingOrder, setPlacingOrder] = useState(false)
+  const [placeName, setPlaceName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!gpsCoords) { setPlaceName(null); return }
+    reverseGeocode(gpsCoords.lat, gpsCoords.lng).then(setPlaceName)
+  }, [gpsCoords])
 
   // Fetch product and pharmacy details
   useEffect(() => {
@@ -116,9 +123,16 @@ function ProductContent() {
     setLocatingUser(true)
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        setGpsCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude })
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setGpsCoords(c)
         setLocatingUser(false)
         toast.success('Position GPS épinglée avec succès !')
+        reverseGeocode(c.lat, c.lng).then((name) => {
+          setPlaceName(name)
+          if (!address.trim()) {
+            setAddress(name)
+          }
+        })
       },
       () => {
         setLocatingUser(false)
@@ -508,7 +522,7 @@ function ProductContent() {
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.15rem' }}>
                       <span style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--green-800)' }}>Position GPS</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--muted)' }}>
-                        {gpsCoords ? `📍 Épinglé (${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lng.toFixed(5)})` : 'Ajoutez votre position GPS pour accélérer la livraison'}
+                        {gpsCoords ? (placeName ? `📍 ${placeName}` : `📍 Épinglé (${gpsCoords.lat.toFixed(5)}, ${gpsCoords.lng.toFixed(5)})`) : 'Ajoutez votre position GPS pour accélérer la livraison'}
                       </span>
                     </div>
                     <button 

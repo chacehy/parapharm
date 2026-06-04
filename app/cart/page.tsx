@@ -6,6 +6,7 @@ import { ShoppingCart, Trash2, Plus, Minus, MapPin } from 'lucide-react'
 import { useCartStore } from '@/lib/cart-store'
 import { createClient } from '@/lib/supabase/client'
 import { toast } from '@/components/Toast'
+import { reverseGeocode } from '@/lib/geocoding'
 
 export default function CartPage() {
   const router = useRouter()
@@ -16,12 +17,28 @@ export default function CartPage() {
   const [loading, setLoading] = useState(false)
   const [locating, setLocating] = useState(false)
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null)
+  const [placeName, setPlaceName] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!coords) { setPlaceName(null); return }
+    reverseGeocode(coords.lat, coords.lng).then(setPlaceName)
+  }, [coords])
 
   const getLocation = () => {
     if (!navigator.geolocation) return
     setLocating(true)
     navigator.geolocation.getCurrentPosition(
-      (pos) => { setCoords({ lat: pos.coords.latitude, lng: pos.coords.longitude }); setLocating(false) },
+      (pos) => {
+        const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+        setCoords(c)
+        setLocating(false)
+        reverseGeocode(c.lat, c.lng).then((name) => {
+          setPlaceName(name)
+          if (!address.trim()) {
+            setAddress(name)
+          }
+        })
+      },
       () => { setLocating(false); toast.error('Could not get location') },
       { enableHighAccuracy: true }
     )
@@ -157,8 +174,8 @@ export default function CartPage() {
             </div>
 
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-              <span style={{ fontSize: '0.8rem', color: 'var(--muted)' }}>
-                {coords ? `📍 ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}` : 'Add GPS pin for faster delivery'}
+              <span style={{ fontSize: '0.8rem', color: 'var(--muted)', maxWidth: '70%', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }} title={placeName || ''}>
+                {coords ? (placeName ? `📍 ${placeName}` : `📍 ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`) : 'Add GPS pin for faster delivery'}
               </span>
               <button onClick={getLocation} className="btn btn-outline btn-sm" disabled={locating}>
                 <MapPin size={14} /> {locating ? '…' : 'Pin location'}
