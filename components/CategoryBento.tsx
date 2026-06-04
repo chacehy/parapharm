@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { HeartPulse, Baby, Dumbbell, Sun, Pill, ShieldAlert, Sparkles, Smile, Droplets, BicepsFlexed, Flame } from 'lucide-react'
 
@@ -50,6 +50,34 @@ const categoriesData = [
 
 export default function CategoryBento() {
   const [hoveredCat, setHoveredCat] = useState<string | null>(null)
+  const [activeCat, setActiveCat] = useState<string | null>(null)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+    const media = window.matchMedia('(max-width: 768px)')
+    setIsMobile(media.matches)
+    const listener = (e: MediaQueryListEvent) => setIsMobile(e.matches)
+    media.addEventListener('change', listener)
+    return () => media.removeEventListener('change', listener)
+  }, [])
+
+  const handleCardClick = (id: string) => {
+    if (isMobile) {
+      setActiveCat((prev) => (prev === id ? null : id))
+    }
+  }
+
+  const handleMouseEnter = (id: string) => {
+    if (!isMobile) {
+      setHoveredCat(id)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (!isMobile) {
+      setHoveredCat(null)
+    }
+  }
 
   return (
     <div style={{ marginBottom: '4rem' }}>
@@ -60,14 +88,15 @@ export default function CategoryBento() {
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '1.5rem', alignItems: 'start' }}>
         {categoriesData.map((cat) => {
-          const isHovered = hoveredCat === cat.id;
+          const isExpanded = isMobile ? activeCat === cat.id : hoveredCat === cat.id
 
           return (
             <div 
               key={cat.id}
               className="card"
-              onMouseEnter={() => setHoveredCat(cat.id)}
-              onMouseLeave={() => setHoveredCat(null)}
+              onMouseEnter={() => handleMouseEnter(cat.id)}
+              onMouseLeave={handleMouseLeave}
+              onClick={() => handleCardClick(cat.id)}
               style={{
                 padding: '1.5rem',
                 position: 'relative',
@@ -77,9 +106,9 @@ export default function CategoryBento() {
                 transition: 'all 0.75s cubic-bezier(0.32, 0.72, 0, 1)',
                 cursor: 'pointer',
                 background: '#fff',
-                borderColor: isHovered ? cat.color : 'var(--green-200)',
-                transform: isHovered ? 'translateY(-6px)' : 'none',
-                boxShadow: isHovered 
+                borderColor: isExpanded ? cat.color : 'var(--green-200)',
+                transform: isExpanded ? 'translateY(-6px)' : 'none',
+                boxShadow: isExpanded 
                   ? `0 20px 40px -10px ${cat.color}20, 0 15px 20px -12px ${cat.color}15`
                   : '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
                 minHeight: '112px'
@@ -90,16 +119,16 @@ export default function CategoryBento() {
                 display: 'flex', 
                 alignItems: 'center', 
                 gap: '1rem', 
-                marginBottom: isHovered ? '1.25rem' : '0px', 
+                marginBottom: isExpanded ? '1.25rem' : '0px', 
                 zIndex: 2,
                 transition: 'margin-bottom 0.75s cubic-bezier(0.32, 0.72, 0, 1)'
               }}>
                 {/* Double-Bezel nested core for icon */}
                 <div style={{ 
                   width: '64px', height: '64px', borderRadius: '16px', display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: isHovered ? cat.color : 'var(--green-50)',
-                  color: isHovered ? '#fff' : 'var(--primary)',
-                  transform: isHovered ? 'scale(1.05)' : 'scale(1)',
+                  background: isExpanded ? cat.color : 'var(--green-50)',
+                  color: isExpanded ? '#fff' : 'var(--primary)',
+                  transform: isExpanded ? 'scale(1.05)' : 'scale(1)',
                   transition: 'all 0.5s cubic-bezier(0.32, 0.72, 0, 1)'
                 }}>
                   {cat.icon}
@@ -113,11 +142,11 @@ export default function CategoryBento() {
                 gridTemplateColumns: '1fr', 
                 gap: '0.5rem', 
                 zIndex: 2,
-                maxHeight: isHovered ? `${cat.subcategories.length * 48 + 30}px` : '0px',
-                opacity: isHovered ? 1 : 0,
+                maxHeight: isExpanded ? `${cat.subcategories.length * 48 + 30}px` : '0px',
+                opacity: isExpanded ? 1 : 0,
                 overflow: 'hidden',
                 transition: 'all 0.75s cubic-bezier(0.32, 0.72, 0, 1)',
-                marginTop: isHovered ? '0.25rem' : '0px',
+                marginTop: isExpanded ? '0.25rem' : '0px',
                 padding: '4px 12px 4px 4px'
               }}>
                 {cat.subcategories.map((sub, i) => (
@@ -125,10 +154,11 @@ export default function CategoryBento() {
                     key={i} 
                     href={`/search?q=${encodeURIComponent(sub.name)}`}
                     className="bento-subcat-link"
+                    onClick={(e) => e.stopPropagation()}
                     style={{ 
                       '--hover-color': cat.color,
-                      transform: isHovered ? 'translateX(0)' : 'translateX(-12px)',
-                      opacity: isHovered ? 1 : 0
+                      transform: isExpanded ? 'translateX(0)' : 'translateX(-12px)',
+                      opacity: isExpanded ? 1 : 0
                     } as React.CSSProperties}
                   >
                     <span className="subcat-icon">{sub.icon}</span>
@@ -145,7 +175,7 @@ export default function CategoryBento() {
                 width: '100%',
                 height: '100%',
                 background: `radial-gradient(circle, ${cat.color}15 0%, transparent 70%)`,
-                opacity: isHovered ? 1 : 0,
+                opacity: isExpanded ? 1 : 0,
                 transition: 'opacity 0.5s ease',
                 pointerEvents: 'none',
                 zIndex: 0
