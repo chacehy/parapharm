@@ -1,7 +1,7 @@
 import type { NextConfig } from 'next'
 
 const nextConfig: NextConfig = {
-  distDir: '.next-dev',
+  distDir: process.env.VERCEL ? undefined : '.next-dev',
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'huhmvtjpzuwugzdgnjig.supabase.co' },
